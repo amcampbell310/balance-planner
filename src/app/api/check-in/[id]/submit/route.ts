@@ -3,11 +3,7 @@ import { PlanItemStatus } from "@prisma/client";
 import { db } from "@/backend/db";
 import { requireUserId } from "@/backend/auth";
 import { generateMissedItemSuggestion } from "@/backend/claude";
-
-// Middle of the "2-4 weeks" range established in diagrams/check-in-flow.mmd
-// and diagrams/data-flow.mmd for when the recommendation engine has enough
-// history to personalize rather than give a generic tip.
-const WEEKS_NEEDED_FOR_PERSONALIZATION = 3;
+import { MIN_WEEKS_FOR_PERSONALIZATION } from "@/backend/jobs/shared";
 
 // Static, not Claude-generated — that's the point of "generic": no LLM call
 // until there's enough history to actually personalize. See
@@ -91,7 +87,7 @@ export async function POST(
   const weeksOfData = await db.checkIn.count({
     where: { userId: checkIn.userId, status: "COMPLETED" },
   });
-  const sufficientData = weeksOfData >= WEEKS_NEEDED_FOR_PERSONALIZATION;
+  const sufficientData = weeksOfData >= MIN_WEEKS_FOR_PERSONALIZATION;
 
   const missedItems = await db.planItem.findMany({
     where: { id: { in: referencedIds }, status: "MISSED" },

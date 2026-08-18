@@ -4,18 +4,21 @@ Status as of 2026-08-17: the v1 core loop is fully built and verified live end-t
 
 This doc tracks what's next. Phases are roughly sequential; the backlog isn't.
 
-## Phase 1 — Scheduler / Reminder Worker
+## Phase 1 — Scheduler / Reminder Worker ✅ complete (2026-08-18)
 
-The only major piece of the original design not yet built. Nothing currently creates `CheckIn` rows or sends notifications automatically — both have been seeded/tested by hand so far.
+Built as the full Redis-queue architecture from the original diagrams (BullMQ), not a simplified single-script version — a deliberate choice to match the diagrammed design now rather than defer it. Runs as one persistent process (`npm run worker`, `src/worker/index.ts`), matching the already-decided Railway hosting plan.
 
-- Weekly job that creates a `PENDING` `CheckIn` for every onboarded user at their week's end (this replaces the manual `psql` seeding used during testing).
-- `CHECK_IN_REMINDER` notification — the core loop's always-on reminder.
-- `DRAFT_PENDING` notification — nudge if a `WeeklyPlan` sits unapproved.
-- `RE_ENGAGEMENT` notification — after ~14 days inactive, suppressed for 30 days after firing (already spec'd in `prisma/schema.prisma`'s `NotificationType` comment).
-- Anti-spam throttle: check the `Notification` log before sending `DRAFT_PENDING` or `RE_ENGAGEMENT` — hold off if the user got anything in the last 7 days.
-- Multi-week `PATTERN_INSIGHT` trend analysis — `analyzeTrends()` already exists in `src/backend/claude.ts` (Haiku 4.5) but isn't wired into anything yet. This is the job that should call it.
-- Pick an email provider and wire actual delivery (nothing sends real email yet).
-- Decide how this actually runs: a persistent Node process (matches the already-decided Railway hosting plan) vs. a scheduled Railway cron — worth a quick real decision, not just an assumption.
+- Four BullMQ queues (`src/backend/queue.ts`), each with one repeatable "sweep" producer (`src/worker/scheduler.ts`) rather than a literal per-user cron entry per the diagrams — per-user/timezone-awareness lives in each job's own eligibility logic instead (using `User.timezone`/`weekStartDay`), which avoids maintaining N schedules that shift on every onboarding/timezone change. `checkin-reminder` sweeps every 15 min; `draft-pending`, `inactivity`, `trend-refresh` sweep daily.
+- `src/backend/jobs/checkInReminder.ts` — creates `PENDING` `CheckIn`s and sends `CHECK_IN_REMINDER`. Scans a bounded 8-week lookback (not just "last week"), so it self-heals and catches up correctly if the worker was ever offline — consolidated into one email per user per sweep even if several weeks piled up at once, never a burst.
+- `src/backend/jobs/draftPending.ts` — `DRAFT_PENDING`, once per `WeeklyPlan`, respecting the 7-day anti-spam throttle.
+- `src/backend/jobs/inactivity.ts` — `RE_ENGAGEMENT` after 14 days inactive, 30-day resuppression, same 7-day throttle.
+- `src/backend/jobs/trendRefresh.ts` — wires `analyzeTrends()` (previously unused) into the `PATTERN_INSIGHT` recommendation type, ~14-day refresh cadence, 16-week bounded history lookback.
+- Email via Resend (`src/backend/email.ts`) — live and verified.
+- Redis runs locally via Docker on port 6380 (6379 was already taken by an unrelated project's container on this machine).
+
+**Verified live**, not just typechecked: the real running worker autonomously fired its first trend-refresh sweep and generated a genuine, accurate insight ("Game Night with Friends... consistently missed... across all four weeks") via a real Haiku 4.5 call. Every job's positive path and its "correctly does nothing" path were exercised by hand against seeded scenarios, including confirming the anti-spam throttle actually suppresses one job type when another just fired for the same user. A real test email was sent and confirmed received.
+
+**Known gap, deliberately deferred**: no retry/dead-letter handling beyond BullMQ's defaults, and the `every`-based sweep intervals are a simplification of "per-user timezone-aware cron" (see above) — revisit if this ever needs tighter timing precision than "within 15 minutes of a boundary."
 
 ## Phase 2 — Prompt Tuning
 

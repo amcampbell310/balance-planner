@@ -9,18 +9,22 @@
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "worker": "tsx watch src/worker/index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
     "@auth/prisma-adapter": "^2.11.3",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "bullmq": "^6.1.2",
+    "ioredis": "^6.0.0",
     "luxon": "^3.7.2",
     "next": "^16.3.1",
     "next-auth": "5.0.0-beta.32",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
+    "resend": "^6.20.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -32,6 +36,7 @@
     "eslint": "^10.8.1",
     "eslint-config-next": "^16.3.1",
     "prisma": "^7.9.1",
+    "tsx": "^4.23.12",
     "typescript": "^5.5.0"
   }
 }
