@@ -5,13 +5,15 @@ import type { ReactNode } from "react";
 // it's pure UI: no data fetching, no auth checks, no backend imports.
 export function PageShell({
   title,
+  wide = false,
   children,
 }: {
   title: string;
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
-    <main className="page-shell">
+    <main className={`page-shell${wide ? " wide" : ""}`}>
       <h1>{title}</h1>
       {children}
     </main>

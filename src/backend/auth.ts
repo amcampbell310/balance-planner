@@ -33,7 +33,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
-        session.user.id = token.sub;
+        // Soft-deleted accounts must be treated as logged out immediately,
+        // not just once their JWT happens to expire — JWT sessions are
+        // stateless, so this DB check on every session read is the actual
+        // enforcement point. Leaving session.user.id unset here is what
+        // makes every requireUserId()/requireOnboardedUser() call below
+        // correctly see "no session" with no extra deletedAt checks needed
+        // at each call site.
+        const user = await db.user.findUnique({
+          where: { id: token.sub },
+          select: { deletedAt: true },
+        });
+        if (user && !user.deletedAt) {
+          session.user.id = token.sub;
+        }
       }
       return session;
     },

@@ -30,14 +30,17 @@ First pass found two real issues, both fixed and re-verified live in `src/backen
 
 `generateMissedItemSuggestion` held up well across all three scenarios with no changes needed. Remaining for this phase: `analyzeTrends` doesn't have eval coverage yet; consider adding a couple of scenarios once there's a natural reason to touch that prompt again.
 
-## Phase 3 — Styling, Animation & Reminder Emails
+## Phase 3 — Styling, Animation & Reminder Emails (in progress, started 2026-08-18)
 
-- Replace the current bare functional CSS (`src/app/globals.css`) with a real visual identity — palette, type, layout — the app has none yet beyond "it works."
-- Two backend-complete, frontend-missing features naturally belong in this pass (flagging for you to place, not assuming):
+- ✅ Real visual identity in `src/app/globals.css` — "evening planner" concept (warm blush/plum tones, not the generic cream-and-terracotta AI-design cliché), Fraunces/Karla type pairing, muted tonal category colors, both light and dark themes (system-aware).
+- ✅ **Real navigation added, beyond the original plan** — the app previously had no way to leave the current week's locked-in view at all (a real gap the user caught mid-build, not something the original phases anticipated). Now: a hamburger-triggered slide-out sidebar (`src/frontend/components/Sidebar.tsx`), route restructure into `src/app/(app)/` (`/home` — landing page with the current week embedded directly plus a recent-recommendations preview; `/this-week` — the same current-week view standalone; `/weeks` + `/weeks/[weekOf]` — browsable read-only history), with gating centralized in `src/backend/gate.ts` (`requireOnboardedUser()`) so every route under the group is protected the same way whether reached via `/` or a direct URL.
+- ✅ **Settings page added** (`/settings`) — preference editing (reuses `POST /api/onboarding`, which already validated/updated exactly these fields) plus a real account-deletion flow (`DELETE /api/account`, two-step confirmation UI). Building this surfaced a real, separate bug: a soft-deleted account's session wasn't actually being treated as logged out anywhere — fixed in `src/backend/auth.ts`'s `session` callback, which is now the single enforcement point (see `deletedAt` note in memory).
+- ✅ **Custom `Select` component** (`src/frontend/components/Select.tsx`) replacing native `<select>` — native dropdown popups can't be reliably restyled cross-browser (the "bright white against a dark theme" problem), so this is a fully custom, themed dropdown with a curated (~40-entry, not the full ~400-zone IANA list), region-grouped timezone picker using real regional convention (`Intl` `timeZoneName: "short"` — letter abbreviations like PDT/EST where that's the actual convention, GMT+X offset everywhere else, verified empirically rather than assumed).
+- Two backend-complete, frontend-missing features still flagged for a future pass (not yet built):
   - **Manual plan-item entry/edit/delete UI** — `POST /api/plan-items` and `/api/plan-items/[id]` fully support this; no form exists.
-  - **Recommendations list + dismiss/acted-on UI** — `Recommendation.status` and `/api/recommendations` fully support this; right now a recommendation only ever flashes once on the check-in screen and is never seen again.
-- Reminder email templates/design — depends on Phase 1's provider choice; HTML email has its own constraints (inlined CSS, table layout) worth planning for up front rather than retrofitting.
-- Micro-interactions for the check-in and approval flows.
+  - **Recommendations list + dismiss/acted-on UI** beyond the Home preview — `Recommendation.status` and `/api/recommendations` fully support dismiss/acted-on; no UI for it yet.
+- Reminder email templates/design — depends on Phase 1's provider choice (Resend); HTML email has its own constraints (inlined CSS, table layout) worth planning for up front rather than retrofitting.
+- Micro-interactions for the check-in and approval flows (a basic staggered fade-in on list items exists; nothing beyond that yet).
 
 ## Backlog — Potential Future Features
 

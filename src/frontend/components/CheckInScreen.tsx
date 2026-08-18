@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import type { CheckIn, PlanItem, PlanItemStatus, Recommendation } from "@prisma/client";
+import { CategoryBadge, categoryClass } from "@/frontend/components/CategoryBadge";
 
 // See src/frontend/components/WeeklyPlanner.tsx for why date fields are
 // typed as string | Date — same RSC-prop-vs-fetch-response split applies.
@@ -103,12 +104,13 @@ export function CheckInScreen({
   return (
     <div className="stack">
       <ul className="item-list">
-        {items.map((item) => (
-          <li key={item.id}>
-            <div>
-              <strong>{item.title}</strong> — {item.category} —{" "}
-              {new Date(item.startTime).toLocaleString()}
+        {items.map((item, i) => (
+          <li key={item.id} className={categoryClass(item.category)} style={{ "--i": i } as CSSProperties}>
+            <div className="item-row">
+              <span className="item-title">{item.title}</span>
+              <CategoryBadge category={item.category} />
             </div>
+            <span className="item-meta">{new Date(item.startTime).toLocaleString()}</span>
             <div className="status-buttons">
               {STATUSES.map((status) => (
                 <button

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import type { WeeklyPlan, PlanItem } from "@prisma/client";
 import type { WeeklyDraft } from "@/backend/claude";
+import { CategoryBadge, categoryClass } from "@/frontend/components/CategoryBadge";
 
 // The initial SSR-passed prop carries real Date objects (Next.js's RSC
 // serialization preserves them), but every subsequent fetch() response goes
@@ -124,9 +125,14 @@ export function WeeklyPlanner({ initialPlan }: { initialPlan: PlanWithItems | nu
         <p>{draft.summary}</p>
         <ul className="item-list">
           {draft.items.map((item, i) => (
-            <li key={i}>
-              <strong>{item.title}</strong> — {item.category} — {item.dayOfWeek}{" "}
-              {item.startTime}–{item.endTime}
+            <li key={i} className={categoryClass(item.category)} style={{ "--i": i } as CSSProperties}>
+              <div className="item-row">
+                <span className="item-title">{item.title}</span>
+                <CategoryBadge category={item.category} />
+              </div>
+              <span className="item-meta">
+                {item.dayOfWeek} {item.startTime}–{item.endTime}
+              </span>
             </li>
           ))}
         </ul>
@@ -156,10 +162,15 @@ export function WeeklyPlanner({ initialPlan }: { initialPlan: PlanWithItems | nu
         {plan.planItems
           .slice()
           .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-          .map((item) => (
-            <li key={item.id}>
-              <strong>{item.title}</strong> — {item.category} —{" "}
-              {new Date(item.startTime).toLocaleString()} ({item.status})
+          .map((item, i) => (
+            <li key={item.id} className={categoryClass(item.category)} style={{ "--i": i } as CSSProperties}>
+              <div className="item-row">
+                <span className="item-title">{item.title}</span>
+                <CategoryBadge category={item.category} />
+              </div>
+              <span className="item-meta">
+                {new Date(item.startTime).toLocaleString()} · {item.status}
+              </span>
             </li>
           ))}
       </ul>
