@@ -60,7 +60,11 @@ export async function generateWeeklyDraft(input: {
     },
     system: `You help someone plan a balanced week. This app exists specifically to treat social and gaming time as real commitments, not whatever's left over after work fills the week — so when priorities mention things like gaming or time with someone, schedule them with the same seriousness as anything else.
 
-Propose new items that fit around the existing fixed commitments already on the calendar. Never schedule a new item that overlaps an existing one. Keep the week realistic — don't overload any single day, and leave reasonable gaps between items. Only use categories from the user's selected set. Every new item needs a specific day and time, not a vague placement.`,
+Propose new items that fit around the existing fixed commitments already on the calendar. Never schedule a new item that overlaps an existing one. Keep the week realistic — don't overload any single day, and leave reasonable gaps between items.
+
+Hard constraint, not a preference: every item's category MUST be one of the user's selected categories, exactly as given. Never propose a category outside that set, even if it seems like an obviously good idea.
+
+If priorities is empty or vague, propose a light, modest week — a handful of items covering the most clearly underused categories, not a maximal fully-packed schedule. Guessing at a few well-chosen items beats inventing many. Every new item needs a specific day and time, not a vague placement.`,
     messages: [
       {
         role: "user",
@@ -76,7 +80,18 @@ Propose new items that fit around the existing fixed commitments already on the 
   if (!response.parsed_output) {
     throw new Error("Claude did not return a parseable weekly draft");
   }
-  return response.parsed_output;
+
+  // Backstop, not just belt-and-suspenders — eval testing showed the model
+  // will propose categories outside selectedCategories even with an
+  // explicit "hard constraint" instruction in the system prompt (see
+  // scripts/eval-prompts.ts's "single selected category" case). Prompt
+  // wording alone isn't reliable enough for something the schema is meant
+  // to guarantee, so enforce it here too.
+  const allowed = new Set(input.selectedCategories);
+  return {
+    ...response.parsed_output,
+    items: response.parsed_output.items.filter((item) => allowed.has(item.category)),
+  };
 }
 
 // ---------------------------------------------------------------------------

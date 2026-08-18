@@ -20,13 +20,15 @@ Built as the full Redis-queue architecture from the original diagrams (BullMQ), 
 
 **Known gap, deliberately deferred**: no retry/dead-letter handling beyond BullMQ's defaults, and the `every`-based sweep intervals are a simplification of "per-user timezone-aware cron" (see above) — revisit if this ever needs tighter timing precision than "within 15 minutes of a boundary."
 
-## Phase 2 — Prompt Tuning
+## Phase 2 — Prompt Tuning (in progress, first pass done 2026-08-18)
 
-Both Claude prompts have now produced real output to evaluate against, not just spec.
+Built `scripts/eval-prompts.ts` (`npm run eval:prompts`) — 5 `generateWeeklyDraft` scenarios (normal case, empty priorities, single selected category, packed schedule, overlapping/inconsistent existing items) and 3 `generateMissedItemSuggestion` scenarios (no history, clear pattern, unhelpful statusNote), re-run after every prompt change instead of eyeballing one draft at a time.
 
-- `generateWeeklyDraft` — review against the actual drafts generated so far; tune for edge cases (no stated priorities, conflicting existing items, empty `selectedCategories`).
-- `generateMissedItemSuggestion` — already produced one genuinely good, specific suggestion; worth a systematic pass (few-shot examples, tone) rather than one-off luck.
-- Worth deciding now: a lightweight eval set (a handful of realistic scenario inputs you re-run after every prompt change) beats eyeballing one draft at a time.
+First pass found two real issues, both fixed and re-verified live in `src/backend/claude.ts`:
+- **Bug**: with `selectedCategories: ["WORK"]`, the model proposed SOCIAL and GAMING items anyway — direct violation of the system prompt's existing "only use categories from the user's selected set" instruction. Prompt wording alone wasn't reliable enough, so added a **programmatic backstop**: `generateWeeklyDraft` now filters `items` down to `selectedCategories` before returning, regardless of what the prompt achieves. Worth remembering as a general pattern: don't trust a "hard constraint" phrased only in the system prompt for anything the schema is supposed to guarantee — verify it eval-style, and enforce anything that matters in code.
+- **Quality**: empty/vague priorities produced a maximalist, presumptuous 15-item week filling every day. Added explicit guidance to propose a light, modest week in that case instead — re-verified live, now produces ~5 well-chosen items.
+
+`generateMissedItemSuggestion` held up well across all three scenarios with no changes needed. Remaining for this phase: `analyzeTrends` doesn't have eval coverage yet; consider adding a couple of scenarios once there's a natural reason to touch that prompt again.
 
 ## Phase 3 — Styling, Animation & Reminder Emails
 
