@@ -1,0 +1,106 @@
+%% Balance Planner — Database Schema (mirrors prisma/schema.prisma)
+
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#fef3c7', 'primaryBorderColor': '#d97706', 'primaryTextColor': '#78350f', 'lineColor': '#64748b', 'attributeBackgroundColorOdd': '#fffbeb', 'attributeBackgroundColorEven': '#fef3c7' }}}%%
+erDiagram
+    USER ||--o{ ACCOUNT : has
+    USER ||--o{ WEEKLYPLAN : has
+    USER ||--o{ PLANITEM : has
+    USER ||--o{ CHECKIN : has
+    USER ||--o{ RECOMMENDATION : has
+    USER ||--o{ NOTIFICATION : has
+    WEEKLYPLAN |o--o{ PLANITEM : "contains (optional)"
+    WEEKLYPLAN |o--o{ CHECKIN : "relates to (optional)"
+    WEEKLYPLAN |o--o{ RECOMMENDATION : "relates to (optional)"
+    WEEKLYPLAN |o--o{ NOTIFICATION : "relates to (optional)"
+    PLANITEM |o--o{ RECOMMENDATION : "targeted by (optional)"
+
+    USER {
+        string id PK
+        string name
+        string email UK
+        datetime emailVerified "set by OAuth provider on first login, required by Auth.js adapter"
+        string image
+        string timezone "default UTC"
+        int weekStartDay "0=Sun .. 6=Sat"
+        string selectedCategories "array of Category enum"
+        boolean onboarded
+        datetime lastLoginAt "drives RE_ENGAGEMENT eligibility"
+        datetime deletedAt "soft delete, nullable"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    ACCOUNT {
+        string id PK
+        string userId FK
+        string type
+        string provider
+        string providerAccountId
+        string refresh_token
+        string access_token
+        int expires_at
+        string token_type
+        string scope
+        string id_token
+        string session_state
+    }
+
+    WEEKLYPLAN {
+        string id PK
+        string userId FK
+        datetime weekOf "unique with userId — one plan per user per week"
+        string priorities "raw user input"
+        json draftJson "Claude's structured draft"
+        string status "PENDING or APPROVED"
+        datetime approvedAt
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    PLANITEM {
+        string id PK
+        string userId FK
+        string weeklyPlanId FK "nullable — null for manual items"
+        string title
+        string category "Category enum"
+        datetime startTime
+        datetime endTime
+        datetime weekOf "denormalized, always set, indexed"
+        string source "CLAUDE_DRAFT or MANUAL"
+        string status "PLANNED, DONE, MISSED, SKIPPED"
+        string statusNote "why missed/skipped, nullable"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    CHECKIN {
+        string id PK
+        string userId FK
+        string weeklyPlanId FK "nullable — null for manual-only weeks"
+        datetime weekOf "unique with userId — one check-in per user per week"
+        string status "PENDING or COMPLETED"
+        datetime respondedAt
+        datetime createdAt
+    }
+
+    RECOMMENDATION {
+        string id PK
+        string userId FK
+        string weeklyPlanId FK "nullable — null for pattern insights"
+        string planItemId FK "nullable — the specific missed item, if any"
+        string type "WEEKLY_SUGGESTION or PATTERN_INSIGHT"
+        string category "Category enum, nullable"
+        string content
+        boolean isGeneric
+        string status "ACTIVE, DISMISSED, ACTED_ON"
+        datetime respondedAt
+        datetime createdAt
+    }
+
+    NOTIFICATION {
+        string id PK
+        string userId FK
+        string weeklyPlanId FK "nullable — null for RE_ENGAGEMENT"
+        string type "CHECK_IN_REMINDER, DRAFT_PENDING, RE_ENGAGEMENT"
+        datetime sentAt "indexed — supports anti-spam lookback checks"
+    }

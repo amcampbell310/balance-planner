@@ -1,0 +1,36 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#dcfce7', 'primaryBorderColor': '#16a34a', 'primaryTextColor': '#14532d', 'lineColor': '#64748b', 'actorBkg': '#dbeafe', 'actorBorder': '#2563eb', 'actorTextColor': '#1e3a5f', 'signalColor': '#334155', 'signalTextColor': '#1e293b', 'labelBoxBkgColor': '#fef3c7', 'labelBoxBorderColor': '#d97706', 'labelTextColor': '#78350f', 'noteBkgColor': '#fce7f3', 'noteBorderColor': '#db2777', 'noteTextColor': '#831843' }}}%%
+sequenceDiagram
+    actor U as You
+    participant FE as Dashboard (Web App)
+    participant Auth as Auth.js
+    participant API as Backend API
+    participant DB as Database (Postgres)
+
+    U->>FE: First login (new account)
+    FE->>Auth: Authenticate (Google, Microsoft, or Apple)
+
+    alt Auth succeeds
+        Auth->>DB: Save user + account record
+        Auth->>DB: Set lastLoginAt
+        Auth->>FE: Session cookie set
+    else Auth fails or denied
+        Auth-->>FE: Auth error
+        FE->>U: Show error, offer retry
+    end
+
+    FE->>API: Check onboarding status
+    API-->>FE: Not onboarded
+
+    FE->>U: "What matters most to you?"
+    Note over FE,U: Curated set of categories (e.g. Work, Social, Gaming, Fitness, Chores) — not unlimited custom options
+    U->>FE: Select a few categories
+
+    FE->>U: "What's your timezone and when does your week start?"
+    U->>FE: Set timezone + week-start day
+
+    FE->>API: Submit onboarding selections
+    API->>DB: Save categories + timezone + week-start prefs
+    API->>DB: Mark onboarding complete
+
+    API-->>FE: Onboarding complete
+    FE->>U: Proceed to home screen

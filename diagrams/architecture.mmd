@@ -1,0 +1,59 @@
+%% Balance Planner — Architecture
+
+flowchart TD
+    subgraph Client
+        Browser[Browser<br/>Weekly / Daily Planning Dashboard]
+    end
+
+    subgraph App["Application — Node.js + TypeScript"]
+        direction TB
+        Frontend[Frontend<br/>React / Next.js]
+        Auth[Auth.js<br/>OAuth handshake<br/>JWT sessions]
+        API[Backend API]
+        Scheduler[Scheduler<br/>per-user cron<br/>timezone-aware]
+        RecEngine[Recommendation Engine<br/>background worker<br/>multi-week trend analysis]
+    end
+
+    subgraph Data["Data layer"]
+        direction TB
+        DB[(Postgres<br/>users, accounts, preferences<br/>plan items, drafts, feedback<br/>recommendations, history)]
+        Cache[(Redis<br/>cache, job queue)]
+    end
+
+    subgraph External["External services"]
+        direction TB
+        OAuth[OAuth Providers<br/>Google, Microsoft, Apple]
+        Claude[Claude Sonnet 5]
+        Email[Email Provider<br/>reminders only]
+        GCal[Google Calendar API<br/>deferred — v2]
+    end
+
+    Browser -->|"HTTPS"| Frontend
+    Frontend <-->|"login + session"| Auth
+    Auth <-->|"OAuth handshake"| OAuth
+    Auth -->|"user + account record"| DB
+    Frontend -->|"API calls + session cookie"| API
+    API -->|"verify session (JWT, local)"| Auth
+    API <-->|"persist plan items, drafts, feedback, preferences"| DB
+    API <-->|"cache"| Cache
+    DB -->|"per-user timezone + week-start prefs"| Scheduler
+    Scheduler -->|"enqueue: reminders (weekly), trend refresh (2-4wks)"| Cache
+    Cache -->|"dequeue: trend refresh"| RecEngine
+    Cache -->|"dequeue: check-in reminder"| API
+    RecEngine -->|"reads full history"| DB
+    RecEngine <-->|"identify recurring patterns, once 2-4+ weeks of data"| Claude
+    RecEngine -->|"writes pattern insights"| DB
+    API <-->|"plan week / suggest fixes"| Claude
+    API -->|"send reminder"| Email
+    API -->|"digest gate + pattern insights"| Frontend
+    API -.->|"sync, v2"| GCal
+
+    classDef client fill:#dbeafe,stroke:#2563eb,color:#1e3a5f,stroke-width:1.5px
+    classDef app fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef data fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:1.5px
+    classDef external fill:#fce7f3,stroke:#db2777,color:#831843,stroke-width:1.5px
+
+    class Browser client
+    class Frontend,Auth,API,Scheduler,RecEngine app
+    class DB,Cache data
+    class OAuth,Claude,Email,GCal external

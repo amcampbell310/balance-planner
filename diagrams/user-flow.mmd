@@ -1,0 +1,80 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#dcfce7', 'primaryBorderColor': '#16a34a', 'primaryTextColor': '#14532d', 'lineColor': '#64748b', 'actorBkg': '#dbeafe', 'actorBorder': '#2563eb', 'actorTextColor': '#1e3a5f', 'signalColor': '#334155', 'signalTextColor': '#1e293b', 'labelBoxBkgColor': '#fef3c7', 'labelBoxBorderColor': '#d97706', 'labelTextColor': '#78350f', 'noteBkgColor': '#fce7f3', 'noteBorderColor': '#db2777', 'noteTextColor': '#831843' }}}%%
+sequenceDiagram
+    actor U as You
+    participant FE as Dashboard (Web App)
+    participant Auth as Auth.js
+    participant API as Backend API
+    participant DB as Database (Postgres)
+    participant C as Claude Sonnet 5
+
+    U->>FE: Open dashboard
+    FE->>Auth: Check session
+
+    alt Not logged in
+        Auth->>U: Prompt login (Google, Microsoft, or Apple)
+        U->>Auth: Authenticate via provider
+
+        alt Auth succeeds
+            Auth->>DB: Save user + account record
+            Auth->>FE: Session cookie set
+        else Auth fails or denied
+            Auth-->>FE: Auth error
+            FE->>U: Show error, offer retry
+        end
+    end
+
+    Auth->>DB: Update lastLoginAt
+
+    FE->>API: Check onboarding status
+    API-->>FE: Onboarded?
+
+    alt Not onboarded
+        Note over FE,U: New user — see onboarding-flow.mmd
+    else Onboarded
+        FE->>API: Check for pending check-in
+        API-->>FE: Check-in pending?
+
+        alt Check-in pending
+            Note over FE,U: Forced digest screen shown first — see check-in-flow.mmd
+        else No pending check-in
+            FE->>API: Request current week
+            API->>Auth: Verify session (JWT)
+            Auth-->>API: Valid
+            API->>DB: Load existing plan items + draft status
+
+            alt Draft already pending approval
+                DB-->>API: Existing pending draft
+                API-->>FE: Show existing draft
+            else No draft yet this week
+                DB-->>API: This week's plan items
+                API-->>FE: Show planning view
+
+                FE->>U: "What do you want this week? (gaming, date night, gym...)"
+                U->>FE: Enter weekly priorities
+
+                FE->>API: Submit priorities
+                API->>C: Send plan items + priorities
+
+                alt Claude call succeeds
+                    C-->>API: Draft schedule
+                    API->>DB: Create WeeklyPlan (PENDING)
+                    API-->>FE: Show draft
+                else Claude call fails or times out
+                    API-->>FE: Show error, offer retry
+                end
+            end
+
+            alt Approves
+                U->>FE: Approve
+                FE->>API: Save schedule
+                API->>DB: Write final schedule
+            else Requests changes
+                U->>FE: Adjust ("move gaming to Thursday")
+                FE->>API: Re-send with adjustment
+                API->>C: Regenerate
+                C-->>API: Revised draft
+                API->>DB: Update existing WeeklyPlan draft
+                API-->>FE: Show revised draft
+            end
+        end
+    end

@@ -1,0 +1,62 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#dcfce7', 'primaryBorderColor': '#16a34a', 'primaryTextColor': '#14532d', 'lineColor': '#64748b', 'actorBkg': '#dbeafe', 'actorBorder': '#2563eb', 'actorTextColor': '#1e3a5f', 'signalColor': '#334155', 'signalTextColor': '#1e293b', 'labelBoxBkgColor': '#fef3c7', 'labelBoxBorderColor': '#d97706', 'labelTextColor': '#78350f', 'noteBkgColor': '#fce7f3', 'noteBorderColor': '#db2777', 'noteTextColor': '#831843' }}}%%
+sequenceDiagram
+    participant Sched as Scheduler
+    participant Cache as Redis Queue
+    participant API as Backend API
+    participant Email as Email Provider
+    participant FE as Dashboard (Web App)
+    actor U as You
+    participant DB as Database (Postgres)
+    participant C as Claude Sonnet 5
+
+    Sched->>Cache: Enqueue check-in reminder job
+    Cache->>API: Dequeue reminder job
+    API->>DB: Load this week's plan items
+    DB-->>API: Planned items + statuses
+    API->>DB: Mark check-in as pending
+    API->>Email: Send reminder
+    API->>DB: Log notification (CHECK_IN_REMINDER)
+    Email->>U: "Your weekly check-in is ready"
+
+    Note over U,FE: Some time later — next login
+
+    U->>FE: Log in
+    FE->>API: Check for pending check-in
+    API-->>FE: Check-in pending: true
+
+    FE->>U: Force digest screen (blocks home)
+    API-->>FE: This week's plan items
+    FE->>U: "How'd this week go?" (per item)
+    U->>FE: Mark items done / missed
+
+    FE->>API: Submit check-in
+    API->>DB: Record what happened per item
+    API->>DB: Check history depth for this user
+    DB-->>API: Weeks of feedback collected
+
+    alt Fewer than 2-4 weeks of data
+        API-->>FE: Progress popup (week N of 2-4) + generic tips
+        FE->>U: "Still learning your patterns — generic tip for now: ..."
+    else 2-4+ weeks of data
+        alt Items were missed
+            API->>DB: Read history for missed categories
+            DB-->>API: Past patterns
+            API->>C: Ask for suggestions on missed items
+
+            alt Claude call succeeds
+                C-->>API: Suggested adjustments
+                API->>DB: Save recommendations
+                API-->>FE: Show personalized suggestions
+                FE->>U: "Move gym to mornings next week?"
+            else Claude call fails or times out
+                API-->>FE: Show acknowledgment only, suggestion unavailable
+            end
+        else Everything happened
+            API-->>FE: Show acknowledgment in digest screen
+        end
+    end
+
+    U->>FE: Dismiss / continue
+    FE->>API: Mark check-in as resolved
+    API->>DB: Clear pending flag
+    FE->>U: Proceed to home screen
