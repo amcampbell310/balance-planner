@@ -40,15 +40,28 @@ export default async function HomePage() {
                       <span className="item-title">{rec.content}</span>
                       {rec.category && <CategoryBadge category={rec.category} />}
                     </div>
+                    {/* Lets you eyeball week-over-week whether the
+                        recommendation engine is actually learning, not just
+                        that it fired. */}
+                    <span className="recommendation-date">
+                      {rec.createdAt.toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
                   </li>
                 ))}
               </ul>
             </section>
           )}
 
-          <p className="muted">
-            Looking for an older week? <Link href="/weeks">Browse past weeks</Link>.
-          </p>
+          <Link href="/weeks" className="browse-weeks-link">
+            <span>Browse past weeks</span>
+            <span className="arrow" aria-hidden="true">
+              →
+            </span>
+          </Link>
         </aside>
       </div>
     </PageShell>

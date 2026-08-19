@@ -3,7 +3,8 @@
 import { useState, type CSSProperties } from "react";
 import type { WeeklyPlan, PlanItem } from "@prisma/client";
 import type { WeeklyDraft } from "@/backend/claude";
-import { CategoryBadge, categoryClass } from "@/frontend/components/CategoryBadge";
+import { categoryClass, categoryLabel } from "@/frontend/components/CategoryBadge";
+import { CategoryLegend } from "@/frontend/components/CategoryLegend";
 
 // The initial SSR-passed prop carries real Date objects (Next.js's RSC
 // serialization preserves them), but every subsequent fetch() response goes
@@ -123,15 +124,15 @@ export function WeeklyPlanner({ initialPlan }: { initialPlan: PlanWithItems | nu
     return (
       <div className="stack">
         <p>{draft.summary}</p>
+        <CategoryLegend />
         <ul className="item-list">
           {draft.items.map((item, i) => (
             <li key={i} className={categoryClass(item.category)} style={{ "--i": i } as CSSProperties}>
               <div className="item-row">
                 <span className="item-title">{item.title}</span>
-                <CategoryBadge category={item.category} />
               </div>
               <span className="item-meta">
-                {item.dayOfWeek} {item.startTime}–{item.endTime}
+                {item.dayOfWeek} {item.startTime}–{item.endTime} · {categoryLabel(item.category)}
               </span>
             </li>
           ))}
@@ -158,18 +159,27 @@ export function WeeklyPlanner({ initialPlan }: { initialPlan: PlanWithItems | nu
   return (
     <div className="stack">
       <p>This week is locked in.</p>
+      <CategoryLegend />
       <ul className="item-list">
         {plan.planItems
           .slice()
           .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
           .map((item, i) => (
-            <li key={item.id} className={categoryClass(item.category)} style={{ "--i": i } as CSSProperties}>
+            <li
+              key={item.id}
+              className={`${categoryClass(item.category)} ${
+                item.status === "MISSED" || item.status === "SKIPPED" ? "item-faded" : ""
+              }`}
+              style={{ "--i": i } as CSSProperties}
+            >
               <div className="item-row">
                 <span className="item-title">{item.title}</span>
-                <CategoryBadge category={item.category} />
+                <span className={`status-tag status-${item.status.toLowerCase()}`}>
+                  {item.status}
+                </span>
               </div>
               <span className="item-meta">
-                {new Date(item.startTime).toLocaleString()} · {item.status}
+                {new Date(item.startTime).toLocaleString()} · {categoryLabel(item.category)}
               </span>
             </li>
           ))}

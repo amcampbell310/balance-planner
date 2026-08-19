@@ -15,14 +15,16 @@
   --accent: #9a364f;
   --accent-hover: #7e2c40;
   --accent-contrast: #fdf3f4;
-  --error: #b3261e;
+  --error: #c62828;
   --error-bg: #fbe8e6;
+  --success: #2f8f3a;
+  --warning: #b8860b;
 
-  --cat-work: #52627f;
-  --cat-social: #a8536b;
-  --cat-gaming: #6e5490;
-  --cat-fitness: #5c8259;
-  --cat-chores: #b08a4e;
+  --cat-work: #3c5a8f;
+  --cat-social: #c23b64;
+  --cat-gaming: #7d3fb0;
+  --cat-fitness: #1f8f74;
+  --cat-chores: #b8622a;
 
   --shadow: 0 1px 2px rgba(51, 25, 29, 0.06), 0 4px 12px rgba(51, 25, 29, 0.06);
   --radius: 10px;
@@ -43,14 +45,16 @@
     --accent: #d4708c;
     --accent-hover: #e08fa6;
     --accent-contrast: #201316;
-    --error: #e5877e;
+    --error: #f87171;
     --error-bg: #3a2020;
+    --success: #4ade80;
+    --warning: #fbbf24;
 
-    --cat-work: #7e92b8;
-    --cat-social: #d28098;
-    --cat-gaming: #a587c7;
-    --cat-fitness: #8ab086;
-    --cat-chores: #d4ac72;
+    --cat-work: #5c85d6;
+    --cat-social: #e8598a;
+    --cat-gaming: #b565e0;
+    --cat-fitness: #2dd4a0;
+    --cat-chores: #e08a4a;
 
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.3);
   }
@@ -494,9 +498,9 @@ button.danger-text {
 }
 
 .item-list li {
-  background: var(--surface);
+  background: color-mix(in srgb, var(--item-color, var(--accent)) 12%, var(--surface));
   border: 1px solid var(--border);
-  border-left: 4px solid var(--item-color, var(--accent));
+  border-left: 7px solid var(--item-color, var(--accent));
   border-radius: var(--radius);
   padding: 0.9rem 1rem;
   box-shadow: var(--shadow);
@@ -505,12 +509,27 @@ button.danger-text {
   gap: 0.5rem;
 }
 
+/* Category stays the block color (matches how a real calendar view will
+   color by category later); status is conveyed by fading instead of
+   competing for the color slot — mirrors how calendar apps typically show
+   a declined/missed event (dimmed), not with a different block color. */
+.item-list li.item-faded {
+  opacity: 0.55;
+}
+
 .item-row {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.item-tags {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .item-title {
@@ -519,6 +538,63 @@ button.danger-text {
 
 .item-meta {
   font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+}
+
+.status-tag.status-done {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+}
+
+.status-tag.status-missed {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 18%, transparent);
+}
+
+.status-tag.status-skipped {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 18%, transparent);
+}
+
+.recommendation-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.browse-weeks-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.browse-weeks-link:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+.browse-weeks-link .arrow {
   color: var(--text-muted);
 }
 
@@ -533,6 +609,28 @@ button.danger-text {
   background: color-mix(in srgb, var(--badge-color, var(--accent)) 16%, transparent);
   border-radius: 999px;
   padding: 0.2rem 0.55rem;
+}
+
+.category-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.category-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.category-legend-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--item-color, var(--accent));
+  flex-shrink: 0;
 }
 
 .cat-work {

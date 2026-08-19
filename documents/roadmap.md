@@ -46,7 +46,8 @@ First pass found two real issues, both fixed and re-verified live in `src/backen
 
 Not phased, no commitment to build:
 
-- **Historical/past-weeks view** — right now the app only ever shows "this week"; there's no way to look back at prior plans or check-ins even though the data exists.
+- ✅ ~~Historical/past-weeks view~~ — built in Phase 3 (`/weeks` + `/weeks/[weekOf]`).
+- **Home as a real calendar view** — the current Home/This-Week/Past-Weeks list-of-cards layout is a stepping stone toward a proper calendar grid, with the ability to swap between current and past weeks, showing the same information (items, category, status) laid out by day/time instead of a flat list. This is *why* category (not status) was kept as the item's primary border color in the Phase 3 styling pass — calendar UIs conventionally color blocks by category/calendar, not completion status (see globals.css's `.item-faded` comment) — so that mapping carries forward cleanly instead of needing rework later.
 - Google Calendar sync (already deferred to v2 in the original design).
 - Microsoft and Apple OAuth (Google-only for now).
 - Credentials (email + password) sign-in alongside OAuth (already discussed, deferred).
