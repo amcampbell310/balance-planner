@@ -1,41 +1,24 @@
-"use client";
-
-import { useState } from "react";
 import { getOrderedWeekDayNames } from "@/backend/week";
 import { categoryClass, categoryLabel } from "@/frontend/components/CategoryBadge";
 import { formatDuration, type CalendarEntry } from "@/frontend/calendarTypes";
 
 // The simpler, pre-time-grid presentation: each day as a labeled section,
 // items listed top to bottom in a plain .item-list rather than positioned
-// on a time axis — meant for a fast read of the week, not for dragging
-// durations, which is what the calendar view is for. Reuses the same
-// normalized CalendarEntry[] the calendar renders, so both views always
-// agree on what's actually scheduled.
+// on a time axis — meant for a fast read of the week, not for editing it.
+// Deliberately read-only (no add/delete) — the calendar view is the one
+// place for changing what's scheduled; this one is just for looking.
+// Reuses the same normalized CalendarEntry[] the calendar renders, so both
+// views always agree on what's actually scheduled.
 export function WeekGlanceView({
   weekOf,
   weekStartDay,
   entries,
-  interactive = false,
-  onItemDeleted,
 }: {
   weekOf: Date;
   weekStartDay: number;
   entries: CalendarEntry[];
-  interactive?: boolean;
-  onItemDeleted?: (key: string) => void;
 }) {
   const dayNames = getOrderedWeekDayNames(weekStartDay);
-  const [deletingKey, setDeletingKey] = useState<string | null>(null);
-
-  async function handleDelete(key: string) {
-    setDeletingKey(key);
-    try {
-      const res = await fetch(`/api/plan-items/${key}`, { method: "DELETE" });
-      if (res.ok) onItemDeleted?.(key);
-    } finally {
-      setDeletingKey(null);
-    }
-  }
 
   return (
     <div className="week-glance">
@@ -70,7 +53,6 @@ export function WeekGlanceView({
             <ul className="item-list">
               {dayEntries.map((entry) => {
                 const durationMinutes = entry.endSortMinutes - entry.sortMinutes;
-                const canDelete = interactive && entry.deletable;
                 return (
                   <li
                     key={entry.key}
@@ -91,22 +73,10 @@ export function WeekGlanceView({
                         {entry.isDraft && <span className="draft-tag">DRAFT</span>}
                       </div>
                     </div>
-                    <div className="item-row">
-                      <span className="item-meta">
-                        {entry.timeLabel}–{entry.endTimeLabel} · {formatDuration(durationMinutes)}{" "}
-                        · {categoryLabel(entry.category)}
-                      </span>
-                      {canDelete && (
-                        <button
-                          type="button"
-                          className="secondary danger-text"
-                          onClick={() => handleDelete(entry.key)}
-                          disabled={deletingKey === entry.key}
-                        >
-                          {deletingKey === entry.key ? "Deleting..." : "Delete"}
-                        </button>
-                      )}
-                    </div>
+                    <span className="item-meta">
+                      {entry.timeLabel}–{entry.endTimeLabel} · {formatDuration(durationMinutes)} ·{" "}
+                      {categoryLabel(entry.category)}
+                    </span>
                   </li>
                 );
               })}

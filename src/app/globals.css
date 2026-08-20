@@ -409,6 +409,73 @@ button.danger-text {
   padding: 0.75rem;
 }
 
+/* Joins the existing toggle + legend row (.controls-row) instead of
+   getting its own row or overlaying the calendar — pushed to the row's far
+   right via margin-left: auto so it lines up with the toggle/legend on the
+   left without adding any new vertical space of its own, and sits well
+   clear of the calendar's own sticky hour header (a prior overlay-on-top-
+   of-the-calendar approach fought that header's stacking context). */
+.add-item-inline {
+  margin-left: auto;
+}
+
+.add-item-root {
+  position: relative;
+  width: fit-content;
+}
+
+.add-item-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.9rem;
+}
+
+.day-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.add-item-time-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-item-time-row input,
+.add-item-time-row .select-root {
+  flex: 1;
+  min-width: 0;
+}
+
+.day-pill {
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.day-pill:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.day-pill.selected {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .calendar-info-popover .item-tags {
   flex-wrap: wrap;
 }

@@ -178,6 +178,11 @@ export function WeeklyPlanner({
             </button>
           </div>
           <CategoryLegend />
+          {viewMode === "calendar" && (
+            <div className="add-item-inline">
+              <AddPlanItemForm weekOf={weekOf} weekStartDay={weekStartDay} onCreated={addItem} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -235,13 +240,8 @@ export function WeeklyPlanner({
         />
       ) : (
         <div className="home-grid">
-          <WeekGlanceView
-            weekOf={weekOf}
-            weekStartDay={weekStartDay}
-            entries={entries}
-            interactive
-            onItemDeleted={deleteItem}
-          />
+          {/* Read-only — no add/delete here, that's what the calendar view is for. */}
+          <WeekGlanceView weekOf={weekOf} weekStartDay={weekStartDay} entries={entries} />
 
           <aside className="stack">
             {recommendations.length > 0 && (
@@ -279,8 +279,6 @@ export function WeeklyPlanner({
           </aside>
         </div>
       )}
-
-      <AddPlanItemForm weekOf={weekOf} onCreated={addItem} />
     </div>
   );
 }
