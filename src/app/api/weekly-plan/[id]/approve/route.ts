@@ -61,10 +61,17 @@ export async function POST(
     }),
   ]);
 
-  const result = await db.weeklyPlan.findUnique({
-    where: { id },
-    include: { planItems: true },
-  });
+  // Not `include: { planItems: true }` — that relation excludes manually
+  // created items (weeklyPlanId is left unset for those, see
+  // src/app/api/plan-items/route.ts). Fetch the week's real items directly
+  // so a manual item added before approval survives in the response.
+  const [plan, items] = await Promise.all([
+    db.weeklyPlan.findUniqueOrThrow({ where: { id } }),
+    db.planItem.findMany({
+      where: { userId: weeklyPlan.userId, weekOf: weeklyPlan.weekOf },
+      orderBy: { startTime: "asc" },
+    }),
+  ]);
 
-  return NextResponse.json(result);
+  return NextResponse.json({ ...plan, items });
 }

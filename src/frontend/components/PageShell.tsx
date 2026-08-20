@@ -6,15 +6,17 @@ import type { ReactNode } from "react";
 export function PageShell({
   title,
   wide = false,
+  centerTitle = false,
   children,
 }: {
   title: string;
   wide?: boolean;
+  centerTitle?: boolean;
   children: ReactNode;
 }) {
   return (
     <main className={`page-shell${wide ? " wide" : ""}`}>
-      <h1>{title}</h1>
+      <h1 className={centerTitle ? "text-center" : undefined}>{title}</h1>
       {children}
     </main>
   );

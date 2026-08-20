@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { db } from "@/backend/db";
 import { requireOnboardedUser } from "@/backend/gate";
-import { getCurrentWeekOf } from "@/backend/week";
+import { getCurrentWeekOf, weekOfToParam } from "@/backend/week";
 import { PageShell } from "@/frontend/components/PageShell";
-
-function weekOfParam(weekOf: Date): string {
-  return weekOf.toISOString().slice(0, 10);
-}
 
 export default async function PastWeeksPage() {
   const user = await requireOnboardedUser();
@@ -38,7 +34,7 @@ export default async function PastWeeksPage() {
             return (
               <li key={row.weekOf.toISOString()}>
                 <div className="item-row">
-                  <Link href={`/weeks/${weekOfParam(row.weekOf)}`} className="item-title">
+                  <Link href={`/home?week=${weekOfToParam(row.weekOf)}`} className="item-title">
                     Week of {row.weekOf.toLocaleDateString()}
                   </Link>
                   <span className="muted">{status}</span>

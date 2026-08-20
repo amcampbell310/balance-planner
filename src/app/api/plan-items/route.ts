@@ -60,6 +60,9 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
+  if (end <= start) {
+    return NextResponse.json({ error: "endTime must be after startTime" }, { status: 400 });
+  }
 
   const item = await db.planItem.create({
     data: {

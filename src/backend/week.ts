@@ -87,3 +87,40 @@ export function dateToDayOfWeek(date: Date, timezone: string): string {
 export function formatHHMM(date: Date, timezone: string): string {
   return DateTime.fromJSDate(date, { zone: timezone }).toFormat("HH:mm");
 }
+
+/** Shifts a weekOf marker by whole weeks — safe as pure day math (no DST
+ * concerns) since weekOf is already a resolved local-calendar-date marker,
+ * not an instant, and a week never spans a DST boundary in a way that
+ * matters here. */
+export function addWeeks(weekOf: Date, weeks: number): Date {
+  return new Date(weekOf.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);
+}
+
+/** The 7 day names in calendar order starting from weekStartDay — drives
+ * the calendar view's column order. */
+export function getOrderedWeekDayNames(weekStartDay: number): string[] {
+  return Array.from({ length: 7 }, (_, i) => INDEX_DAY[(weekStartDay + i) % 7]);
+}
+
+/** The `?week=YYYY-MM-DD` URL param form of a weekOf marker — weekOf is
+ * already UTC midnight, so .toISOString() needs no timezone handling. */
+export function weekOfToParam(weekOf: Date): string {
+  return weekOf.toISOString().slice(0, 10);
+}
+
+/**
+ * Snaps a `?week=` URL param (a plain YYYY-MM-DD calendar date, already
+ * UTC-anchored — see weekOfToParam) to a real week start. Deliberately NOT
+ * getWeekOfForDate: that function re-interprets its input as a real instant
+ * in the user's timezone, which for a UTC-midnight date string shifts it
+ * backward a calendar day in any timezone behind UTC, silently landing on
+ * the wrong day-of-week (and sometimes the wrong week entirely) — exactly
+ * the bug that broke forward/back navigation asymmetrically. This does pure
+ * UTC day arithmetic instead, matching how the param was constructed.
+ */
+export function snapParamToWeekOf(date: Date, weekStartDay: number): Date {
+  const day = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const offset = (day.getUTCDay() - weekStartDay + 7) % 7;
+  day.setUTCDate(day.getUTCDate() - offset);
+  return day;
+}
