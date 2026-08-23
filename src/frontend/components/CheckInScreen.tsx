@@ -83,7 +83,7 @@ export function CheckInScreen({
 
   if (result) {
     return (
-      <div className="stack">
+      <div className="stack checkin-result">
         {!result.sufficientData && (
           <p className="muted">
             Still learning your patterns — week {result.weeksOfData + 1} of 3 needed for
@@ -128,6 +128,7 @@ export function CheckInScreen({
             </div>
             {marks[item.id] && marks[item.id].status !== "DONE" && (
               <input
+                className="checkin-note"
                 placeholder="Why? (optional)"
                 value={marks[item.id].note}
                 onChange={(e) => setNote(item.id, e.target.value)}

@@ -1,6 +1,7 @@
 import { db } from "@/backend/db";
 import { sendEmail } from "@/backend/email";
-import { activeOnboardedUsers, hasRecentNotification } from "@/backend/jobs/shared";
+import { ReminderEmail } from "@/backend/emails/ReminderEmail";
+import { activeOnboardedUsers, hasRecentNotification, APP_URL } from "@/backend/jobs/shared";
 
 const INACTIVITY_THRESHOLD_DAYS = 14;
 const RE_ENGAGEMENT_SUPPRESSION_DAYS = 30;
@@ -34,10 +35,19 @@ export async function runInactivitySweep(): Promise<{ sent: number }> {
       data: { userId: user.id, type: "RE_ENGAGEMENT" },
     });
 
+    const subject = "Your week is waiting";
+    const body = "It's been a while since you planned a week with Balance Planner.";
     await sendEmail({
       to: user.email,
-      subject: "Your week is waiting",
-      text: "It's been a while since you planned a week with Balance Planner. Log in whenever you're ready to pick it back up.",
+      subject,
+      text: `${body} ${APP_URL}/home`,
+      react: ReminderEmail({
+        preview: subject,
+        heading: subject,
+        body,
+        ctaLabel: "Pick it back up",
+        ctaHref: `${APP_URL}/home`,
+      }),
     });
 
     sent += 1;

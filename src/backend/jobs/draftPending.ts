@@ -1,6 +1,7 @@
 import { db } from "@/backend/db";
 import { sendEmail } from "@/backend/email";
-import { hasRecentNotification } from "@/backend/jobs/shared";
+import { ReminderEmail } from "@/backend/emails/ReminderEmail";
+import { hasRecentNotification, APP_URL } from "@/backend/jobs/shared";
 
 // See prisma/schema.prisma's NotificationType comment: fires at most once
 // per WeeklyPlan (never repeats for the same draft), and is held off if the
@@ -27,10 +28,19 @@ export async function runDraftPendingSweep(): Promise<{ sent: number }> {
       data: { userId: plan.userId, weeklyPlanId: plan.id, type: "DRAFT_PENDING" },
     });
 
+    const subject = "Your weekly draft is waiting for you";
+    const body = "Claude drafted a plan for this week that's still waiting on your approval.";
     await sendEmail({
       to: plan.user.email,
-      subject: "Your weekly draft is waiting for you",
-      text: "Claude drafted a plan for this week that's still waiting on your approval. Log in to Balance Planner to review it.",
+      subject,
+      text: `${body} ${APP_URL}/home`,
+      react: ReminderEmail({
+        preview: subject,
+        heading: subject,
+        body,
+        ctaLabel: "Review the draft",
+        ctaHref: `${APP_URL}/home`,
+      }),
     });
 
     sent += 1;

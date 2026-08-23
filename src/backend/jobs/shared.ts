@@ -1,5 +1,9 @@
 import { db } from "@/backend/db";
 
+// Reminder emails are sent from this worker process, which has no request
+// context of its own to infer the app's URL from — see .env.example.
+export const APP_URL = process.env.APP_URL ?? "http://localhost:3000";
+
 // Shared with src/app/api/check-in/[id]/submit/route.ts — "2-4+ weeks of
 // data" per prisma/schema.prisma's Recommendation comment; middle of that
 // range, one constant so the check-in and trend-refresh paths can't drift.

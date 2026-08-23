@@ -1,7 +1,8 @@
 import { db } from "@/backend/db";
 import { sendEmail } from "@/backend/email";
+import { ReminderEmail } from "@/backend/emails/ReminderEmail";
 import { getCurrentWeekOf } from "@/backend/week";
-import { activeOnboardedUsers } from "@/backend/jobs/shared";
+import { activeOnboardedUsers, APP_URL } from "@/backend/jobs/shared";
 
 const LOOKBACK_WEEKS = 8; // bounded catch-up window if the worker was down for a while
 
@@ -62,16 +63,25 @@ export async function runCheckInReminderSweep(): Promise<{ created: number }> {
     // One email per user per sweep even if several weeks piled up at once
     // (e.g. after the worker was offline) — never send a burst of separate
     // reminder emails for the same catch-up.
+    const subject =
+      newlyPending.length === 1
+        ? "Your weekly check-in is ready"
+        : `You have ${newlyPending.length} weekly check-ins ready`;
+    const body =
+      newlyPending.length === 1
+        ? "How'd last week go? Log in to check in on what happened."
+        : `You have ${newlyPending.length} weeks to check in on. Log in to catch up, oldest first.`;
     await sendEmail({
       to: user.email,
-      subject:
-        newlyPending.length === 1
-          ? "Your weekly check-in is ready"
-          : `You have ${newlyPending.length} weekly check-ins ready`,
-      text:
-        newlyPending.length === 1
-          ? "How'd last week go? Log in to Balance Planner to check in on what happened."
-          : `You have ${newlyPending.length} weeks to check in on. Log in to Balance Planner to catch up, oldest first.`,
+      subject,
+      text: `${body} ${APP_URL}/check-in`,
+      react: ReminderEmail({
+        preview: subject,
+        heading: subject,
+        body,
+        ctaLabel: "Check in now",
+        ctaHref: `${APP_URL}/check-in`,
+      }),
     });
 
     created += newlyPending.length;

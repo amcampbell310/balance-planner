@@ -33,6 +33,7 @@ type RecommendationLike = {
   id: string;
   content: string;
   category: string | null;
+  type: string;
   createdAt: string | Date;
 };
 
@@ -255,7 +256,12 @@ export function WeeklyPlanner({
                     >
                       <div className="item-row">
                         <span className="item-title">{rec.content}</span>
-                        {rec.category && <CategoryBadge category={rec.category} />}
+                        <div className="item-tags">
+                          {rec.category && <CategoryBadge category={rec.category} />}
+                          {rec.type === "PATTERN_INSIGHT" && (
+                            <span className="insight-tag">PATTERN INSIGHT</span>
+                          )}
+                        </div>
                       </div>
                       <span className="recommendation-date">
                         {new Date(rec.createdAt).toLocaleDateString(undefined, {

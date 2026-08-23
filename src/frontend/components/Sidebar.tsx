@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/home", label: "Home" },
   { href: "/this-week", label: "This Week" },
   { href: "/weeks", label: "Past Weeks" },
+  { href: "/recommendations", label: "Recommendations" },
 ];
 
 export function Sidebar() {

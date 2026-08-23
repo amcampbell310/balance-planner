@@ -18,6 +18,8 @@
     "@auth/prisma-adapter": "^2.11.3",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
     "bullmq": "^6.1.2",
     "ioredis": "^6.0.0",
     "lucide-react": "^1.32.0",

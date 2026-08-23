@@ -723,6 +723,29 @@ button.danger-text {
   background: color-mix(in srgb, var(--warning) 18%, transparent);
 }
 
+.status-tag.status-acted_on {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+}
+
+.status-tag.status-dismissed {
+  color: var(--text-muted);
+  background: var(--surface-hover);
+}
+
+.insight-tag {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+}
+
 /* Real time-grid: a single scrollable surface (both axes) so the sticky
    header row and sticky hour gutter stay in sync with scroll on mobile,
    where the grid also scrolls horizontally — a two-grid split (fixed
@@ -1112,6 +1135,32 @@ span.week-nav-arrow {
   .item-list li:nth-child(n) {
     animation-delay: calc(var(--i, 0) * 40ms);
   }
+
+  /* A quick tactile confirmation on the check-in flow's core interaction —
+     marking DONE/MISSED/SKIPPED. Only the newly-selected button animates:
+     adding .selected is a fresh rule match, so the animation plays once
+     per pick, not on every re-render (clicking the same status again is a
+     no-op class-wise, so it stays still). */
+  .status-buttons button.selected {
+    animation: pop 220ms ease;
+  }
+
+  /* The optional "why" note only exists in the DOM once a non-DONE status
+     is picked — it needs its own entrance since it's a fresh element, not
+     a property change on one that was already there. */
+  .checkin-note {
+    animation: rise-in 200ms ease both;
+  }
+
+  /* The check-in result and the "Locked in" confirmation are each the
+     payoff moment of their flow — a plain instant swap undersold both. */
+  .checkin-result {
+    animation: rise-in 300ms ease both;
+  }
+
+  .week-nav-status {
+    animation: pop 260ms ease;
+  }
 }
 
 @keyframes rise-in {
@@ -1122,5 +1171,17 @@ span.week-nav-arrow {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
   }
 }
