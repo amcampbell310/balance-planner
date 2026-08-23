@@ -175,7 +175,7 @@ export async function analyzeTrends(input: {
     output_config: {
       format: zodOutputFormat(TrendInsightSchema),
     },
-    system: `Look across several weeks of a person's planned items and find one recurring pattern worth surfacing — e.g. a category that gets missed on a specific day repeatedly, or one that's consistently completed. State it plainly and specifically, referencing the actual pattern (which day, which category), not a vague generality. If nothing recurs clearly, say so honestly rather than inventing a pattern.`,
+    system: `Look across several weeks of a person's planned items and find one recurring pattern worth surfacing — the same category or item repeating a specific outcome (missed, or consistently completed) across at least two or three distinct weeks, ideally tied to a specific day. A single occurrence in one week is never a pattern, no matter how notable it seems on its own — do not report on it. State the pattern plainly and specifically, referencing the actual recurrence (which day, which category, how many weeks it showed up). If nothing genuinely recurs across multiple weeks, say so honestly (e.g. "no clear recurring pattern yet") rather than inventing one from limited data.`,
     messages: [
       {
         role: "user",

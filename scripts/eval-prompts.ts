@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { generateWeeklyDraft, generateMissedItemSuggestion } from "@/backend/claude";
+import { generateWeeklyDraft, generateMissedItemSuggestion, analyzeTrends } from "@/backend/claude";
 
 // Phase 2 prompt-tuning harness (documents/roadmap.md) — a handful of
 // realistic scenarios re-run after every prompt change, rather than
@@ -101,6 +101,56 @@ const suggestionScenarios: Array<{
   },
 ];
 
+// analyzeTrends's system prompt has its own "hard constraint" worth
+// verifying rather than trusting, per the same lesson the draft-scenario
+// pass already taught this project: "if nothing recurs clearly, say so
+// honestly rather than inventing a pattern." The noise/insufficient-data
+// scenarios below exist specifically to check that, not just the easy
+// clear-pattern cases.
+const trendScenarios: Array<{ name: string; input: Parameters<typeof analyzeTrends>[0] }> = [
+  {
+    name: "clear negative pattern (missed, same day/category — real scenario from testing)",
+    input: {
+      historyItems: [
+        { title: "Game Night with Friends", category: "GAMING", weekOf: "2026-08-03", dayOfWeek: "MONDAY", status: "MISSED", statusNote: "worked late" },
+        { title: "Game Night with Friends", category: "GAMING", weekOf: "2026-08-10", dayOfWeek: "MONDAY", status: "MISSED", statusNote: null },
+        { title: "Game Night with Friends", category: "GAMING", weekOf: "2026-08-17", dayOfWeek: "MONDAY", status: "MISSED", statusNote: "too tired" },
+        { title: "Morning Gaming Session", category: "GAMING", weekOf: "2026-08-17", dayOfWeek: "THURSDAY", status: "DONE", statusNote: null },
+      ],
+    },
+  },
+  {
+    name: "clear positive pattern (consistently completed)",
+    input: {
+      historyItems: [
+        { title: "Gym Session", category: "FITNESS", weekOf: "2026-08-03", dayOfWeek: "TUESDAY", status: "DONE", statusNote: null },
+        { title: "Gym Session", category: "FITNESS", weekOf: "2026-08-10", dayOfWeek: "TUESDAY", status: "DONE", statusNote: null },
+        { title: "Gym Session", category: "FITNESS", weekOf: "2026-08-17", dayOfWeek: "TUESDAY", status: "DONE", statusNote: null },
+        { title: "Gym Session", category: "FITNESS", weekOf: "2026-08-24", dayOfWeek: "TUESDAY", status: "DONE", statusNote: null },
+      ],
+    },
+  },
+  {
+    name: "no clear pattern (varied categories/days/statuses)",
+    input: {
+      historyItems: [
+        { title: "Dentist", category: "CHORES", weekOf: "2026-08-03", dayOfWeek: "MONDAY", status: "DONE", statusNote: null },
+        { title: "Lunch Date", category: "SOCIAL", weekOf: "2026-08-10", dayOfWeek: "WEDNESDAY", status: "MISSED", statusNote: "rescheduled" },
+        { title: "Gym Session", category: "FITNESS", weekOf: "2026-08-17", dayOfWeek: "FRIDAY", status: "DONE", statusNote: null },
+        { title: "Grocery Run", category: "CHORES", weekOf: "2026-08-24", dayOfWeek: "SUNDAY", status: "SKIPPED", statusNote: null },
+      ],
+    },
+  },
+  {
+    name: "insufficient data (single data point)",
+    input: {
+      historyItems: [
+        { title: "Yoga Class", category: "FITNESS", weekOf: "2026-08-17", dayOfWeek: "SATURDAY", status: "MISSED", statusNote: null },
+      ],
+    },
+  },
+];
+
 async function main() {
   for (const scenario of draftScenarios) {
     console.log(`\n=== DRAFT: ${scenario.name} ===`);
@@ -121,6 +171,17 @@ async function main() {
       const result = await generateMissedItemSuggestion(scenario.input);
       console.log("suggestion:", result.suggestion);
       console.log("suggestedDayOfWeek:", result.suggestedDayOfWeek, "suggestedTime:", result.suggestedTime);
+    } catch (err) {
+      console.error("FAILED:", err);
+    }
+  }
+
+  for (const scenario of trendScenarios) {
+    console.log(`\n=== TREND: ${scenario.name} ===`);
+    try {
+      const result = await analyzeTrends(scenario.input);
+      console.log("insight:", result.insight);
+      console.log("category:", result.category);
     } catch (err) {
       console.error("FAILED:", err);
     }
