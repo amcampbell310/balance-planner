@@ -3,6 +3,7 @@ import {
   draftPendingQueue,
   inactivityQueue,
   trendRefreshQueue,
+  purgeAccountsQueue,
 } from "@/backend/queue";
 
 const MINUTES = 60 * 1000;
@@ -19,4 +20,5 @@ export async function registerSchedules() {
   await draftPendingQueue.upsertJobScheduler("draft-pending-schedule", { every: 24 * HOURS });
   await inactivityQueue.upsertJobScheduler("inactivity-schedule", { every: 24 * HOURS });
   await trendRefreshQueue.upsertJobScheduler("trend-refresh-schedule", { every: 24 * HOURS });
+  await purgeAccountsQueue.upsertJobScheduler("purge-accounts-schedule", { every: 24 * HOURS });
 }

@@ -99,9 +99,16 @@ model User {
   email String?   @unique
   // Required by Auth.js's Prisma adapter contract — every OAuth provider's
   // profile is treated as pre-verified, so this is set on createUser and
-  // never surfaced in the app itself (no email/password flow yet).
+  // never surfaced in the app itself. Credentials signup (src/app/api/auth/signup/route.ts)
+  // sets it too, at signup time — there's no real email-verification flow
+  // (no confirmation email) for either path, so this matches the app's
+  // existing lightweight trust posture rather than adding a new one.
   emailVerified DateTime?
   image String?
+  // Null for OAuth-only accounts. bcrypt hash, never the raw password — see
+  // src/app/api/auth/signup/route.ts and the Credentials provider in
+  // src/backend/auth.ts.
+  password String?
 
   // onboarding-flow.mmd
   timezone           String     @default("UTC")
@@ -142,6 +149,11 @@ model WeeklyPlan {
   draftJson  Json // Claude's structured draft response
   status     DraftStatus @default(PENDING)
   approvedAt DateTime?
+
+  // Regenerate has no natural cap the way initial draft creation does (that's
+  // bounded to once/week by @@unique below) — this enforces one server-side,
+  // see src/app/api/weekly-plan/[id]/regenerate/route.ts.
+  regenerateCount Int @default(0)
 
   planItems       PlanItem[]
   checkIns        CheckIn[]

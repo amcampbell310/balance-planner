@@ -6,8 +6,8 @@ import { requireUserId } from "@/backend/auth";
 // account is treated as gone everywhere immediately (enforced in
 // src/backend/auth.ts's session callback, which stops attaching
 // session.user.id once deletedAt is set), while the row and its data
-// survive for a grace period before a scheduled purge job hard-deletes it.
-// That purge job doesn't exist yet — see documents/roadmap.md's backlog.
+// survive a 30-day grace period before src/backend/jobs/purgeDeletedAccounts.ts
+// hard-deletes it (daily sweep, see src/worker/scheduler.ts).
 export async function DELETE() {
   const userId = await requireUserId();
   if (userId instanceof NextResponse) return userId;

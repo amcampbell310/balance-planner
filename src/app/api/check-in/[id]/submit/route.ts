@@ -49,6 +49,13 @@ export async function POST(
   if (checkIn.status !== "PENDING") {
     return NextResponse.json({ error: `Check-in is already ${checkIn.status}` }, { status: 409 });
   }
+  // A check-in stays PENDING until the separate /resolve call, not this one
+  // — without this, a second /submit call (double-click, retry) before
+  // /resolve would re-run the whole thing, including a second real Claude
+  // call and a duplicate Recommendation row.
+  if (checkIn.respondedAt) {
+    return NextResponse.json({ error: "This check-in was already submitted" }, { status: 409 });
+  }
 
   // Every referenced plan item must actually belong to this user — without
   // this check, a submitted id for someone else's item would silently

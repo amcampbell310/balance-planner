@@ -2,6 +2,8 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import Apple from "next-auth/providers/apple";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextResponse } from "next/server";
 import { db } from "@/backend/db";
@@ -10,11 +12,41 @@ import { db } from "@/backend/db";
 // The Prisma adapter still persists User/Account records on sign-in (that's
 // unrelated to session strategy), but with strategy: "jwt" it never touches
 // a Session table — which is why prisma/schema.prisma has no Session model.
-// Microsoft and Apple credentials aren't set yet (see project memory) —
-// Auth.js throws InvalidEndpoints at request time for any *configured*
-// provider missing required env vars, even if the user never tries to use
-// it, so only register a provider once its credentials actually exist.
-const providers = [Google, MicrosoftEntraID, Apple].filter((provider) => {
+// Microsoft and Apple were considered and declined (2026-08-23, see
+// documents/roadmap.md) — Apple specifically needs a paid $99/year Developer
+// account, and Microsoft's setup overhead isn't worth it for a single-user
+// app. Left in the source rather than removed (Auth.js throws
+// InvalidEndpoints at request time for any *configured* provider missing
+// required env vars, even if unused, so this filter is what keeps them
+// harmlessly dormant) in case a real need for one comes up later.
+const providers = [
+  Google,
+  MicrosoftEntraID,
+  Apple,
+  Credentials({
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    // Returning null (not throwing) on any invalid-credentials case is
+    // deliberate — Auth.js surfaces that uniformly as CredentialsSignin
+    // regardless of *why* it failed, which avoids leaking whether an email
+    // is registered at all through a different error message.
+    async authorize(credentials) {
+      const email = credentials?.email;
+      const password = credentials?.password;
+      if (typeof email !== "string" || typeof password !== "string") return null;
+
+      const user = await db.user.findUnique({ where: { email } });
+      if (!user?.password) return null; // no account, or an OAuth-only one
+
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) return null;
+
+      return user;
+    },
+  }),
+].filter((provider) => {
   if (provider === MicrosoftEntraID) return Boolean(process.env.AUTH_MICROSOFT_ENTRA_ID_ID);
   if (provider === Apple) return Boolean(process.env.AUTH_APPLE_ID);
   return true;
@@ -24,6 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },
   providers,
+  pages: { signIn: "/" },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

@@ -15,3 +15,6 @@ export const checkInReminderQueue = new Queue("checkin-reminder", { connection: 
 export const draftPendingQueue = new Queue("draft-pending", { connection: redis });
 export const inactivityQueue = new Queue("inactivity", { connection: redis });
 export const trendRefreshQueue = new Queue("trend-refresh", { connection: redis });
+// Not from the original diagrams — added alongside the purge job itself,
+// see src/backend/jobs/purgeDeletedAccounts.ts.
+export const purgeAccountsQueue = new Queue("purge-accounts", { connection: redis });

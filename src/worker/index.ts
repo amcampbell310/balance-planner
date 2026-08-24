@@ -6,6 +6,7 @@ import { runCheckInReminderSweep } from "@/backend/jobs/checkInReminder";
 import { runDraftPendingSweep } from "@/backend/jobs/draftPending";
 import { runInactivitySweep } from "@/backend/jobs/inactivity";
 import { runTrendRefreshSweep } from "@/backend/jobs/trendRefresh";
+import { runPurgeDeletedAccountsSweep } from "@/backend/jobs/purgeDeletedAccounts";
 
 // Single persistent process: runs the BullMQ workers AND registers the
 // repeatable sweep schedules on startup. Matches the hosting plan (a
@@ -41,6 +42,14 @@ const workers = [
     async () => {
       const result = await runTrendRefreshSweep();
       if (result.refreshed > 0) console.log(`[trend-refresh] refreshed ${result.refreshed}`);
+    },
+    { connection: redis },
+  ),
+  new Worker(
+    "purge-accounts",
+    async () => {
+      const result = await runPurgeDeletedAccountsSweep();
+      if (result.purged > 0) console.log(`[purge-accounts] purged ${result.purged}`);
     },
     { connection: redis },
   ),

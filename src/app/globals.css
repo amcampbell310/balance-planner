@@ -274,11 +274,77 @@ h1 {
   gap: 1.25rem;
 }
 
-.login-buttons {
+.login-page {
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2.75rem 2.25rem;
+  text-align: center;
+}
+
+.login-card h1 {
+  margin: 0 0 0.6rem;
+}
+
+.login-tagline {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 2rem;
+}
+
+.login-buttons {
+  max-width: none;
+}
+
+.login-link-button {
+  align-self: center;
+  width: fit-content;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem;
+}
+
+.login-link-button:hover:not(:disabled) {
+  background: none;
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
   gap: 0.75rem;
-  max-width: 320px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.credentials-form {
+  gap: 0.75rem;
 }
 
 p {
@@ -297,6 +363,8 @@ textarea,
 input[type="text"],
 input[type="date"],
 input[type="time"],
+input[type="email"],
+input[type="password"],
 input:not([type]),
 select {
   font: inherit;
@@ -314,6 +382,12 @@ select:focus,
 button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+textarea::placeholder,
+input::placeholder {
+  color: var(--text-muted);
+  opacity: 1; /* Firefox defaults placeholder opacity below 1 */
 }
 
 button {
@@ -338,6 +412,26 @@ button:active:not(:disabled) {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+/* Google's own brand convention, not the app's accent color — a branded
+   sign-in button is meant to look the same regardless of the host site's
+   theme, so this is deliberately not theme-aware like everything else. */
+button.google-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  background: #fff;
+  color: #3c4043;
+  border: 1px solid #dadce0;
+  font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 500;
+}
+
+button.google-button:hover:not(:disabled) {
+  background: #f8f9fa;
 }
 
 button.secondary {
