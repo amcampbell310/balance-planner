@@ -11,7 +11,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "worker": "tsx watch src/worker/index.ts",
-    "eval:prompts": "tsx scripts/eval-prompts.ts"
+    "eval:prompts": "tsx scripts/eval-prompts.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
@@ -43,6 +45,7 @@
     "eslint-config-next": "^16.3.1",
     "prisma": "^7.9.1",
     "tsx": "^4.23.12",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.11"
   }
 }
