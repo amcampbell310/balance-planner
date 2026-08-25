@@ -29,12 +29,14 @@ export function ReminderEmail({
   body,
   ctaLabel,
   ctaHref,
+  footer = "You're getting this because you have reminders on in Balance Planner. Manage that anytime from Settings.",
 }: {
   preview: string;
   heading: string;
   body: string;
   ctaLabel: string;
   ctaHref: string;
+  footer?: string;
 }) {
   return (
     <Html>
@@ -83,10 +85,7 @@ export function ReminderEmail({
             {ctaLabel}
           </Button>
           <Hr style={{ borderColor: COLORS.border, margin: "32px 0 16px" }} />
-          <Text style={{ fontSize: 12, color: COLORS.textMuted, margin: 0 }}>
-            You&apos;re getting this because you have reminders on in Balance Planner. Manage that
-            anytime from Settings.
-          </Text>
+          <Text style={{ fontSize: 12, color: COLORS.textMuted, margin: 0 }}>{footer}</Text>
         </Container>
       </Body>
     </Html>

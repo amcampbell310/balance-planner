@@ -71,6 +71,29 @@ const draftScenarios: Array<{ name: string; input: Parameters<typeof generateWee
       selectedCategories: ["WORK", "SOCIAL", "GAMING", "FITNESS", "CHORES"],
     },
   },
+  {
+    // Real scenario from live testing (2026-08-25): a regenerate-context bug
+    // (fixed — see src/app/api/weekly-plan/[id]/regenerate/route.ts) meant
+    // FITNESS and CHORES requests from different regenerate rounds never
+    // reached the same call, so they never both got scheduled. Separately,
+    // "keep it light" + "pack the week" together is a deliberate
+    // contradiction stress test — the summary should call it out explicitly
+    // (system prompt change), not resolve it silently either way.
+    name: "contradictory priorities (keep it light + pack the week, real scenario from testing)",
+    input: {
+      existingItems: [
+        { title: "Work Shift", category: "WORK", dayOfWeek: "MONDAY", startTime: "15:15", endTime: "23:45" },
+        { title: "Work Shift", category: "WORK", dayOfWeek: "TUESDAY", startTime: "15:15", endTime: "23:45" },
+        { title: "Work Shift", category: "WORK", dayOfWeek: "THURSDAY", startTime: "15:15", endTime: "23:45" },
+        { title: "Work Shift", category: "WORK", dayOfWeek: "FRIDAY", startTime: "15:15", endTime: "23:45" },
+        { title: "Work Shift", category: "WORK", dayOfWeek: "SATURDAY", startTime: "14:15", endTime: "22:45" },
+        { title: "Work Shift", category: "WORK", dayOfWeek: "SUNDAY", startTime: "14:15", endTime: "22:45" },
+      ],
+      priorities:
+        "a date night, time with friends, game night with friends, a gym session, catch up on chores, keep it light this week, pack the week",
+      selectedCategories: ["WORK", "SOCIAL", "GAMING", "FITNESS", "CHORES"],
+    },
+  },
 ];
 
 const suggestionScenarios: Array<{
@@ -159,6 +182,9 @@ async function main() {
       console.log("summary:", result.summary);
       for (const item of result.items) {
         console.log(`  ${item.dayOfWeek} ${item.startTime}-${item.endTime} [${item.category}] ${item.title}`);
+      }
+      for (const req of result.excludedRequests) {
+        console.log(`  EXCLUDED: "${req.description}" needs [${req.category}]`);
       }
     } catch (err) {
       console.error("FAILED:", err);

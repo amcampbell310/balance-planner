@@ -51,6 +51,14 @@ export async function POST(
     where: { userId: weeklyPlan.userId, weekOf: weeklyPlan.weekOf },
   });
 
+  // Accumulated, not just "original + this adjustment" — a prior round's
+  // adjustment (e.g. "add a gym session") must still be in scope for every
+  // later regenerate, not only the one call it was submitted on. Without
+  // this, each regenerate silently forgets everything except the very first
+  // priorities text and the single newest adjustment, so an earlier request
+  // can vanish from context entirely once a second regenerate happens.
+  const accumulatedPriorities = `${weeklyPlan.priorities}\n\nAdjustment requested: ${adjustment}`;
+
   const draft = await generateWeeklyDraft({
     existingItems: existingItems.map((item) => ({
       title: item.title,
@@ -59,13 +67,17 @@ export async function POST(
       startTime: formatHHMM(item.startTime, user.timezone),
       endTime: formatHHMM(item.endTime, user.timezone),
     })),
-    priorities: `${weeklyPlan.priorities}\n\nAdjustment requested: ${adjustment}`,
+    priorities: accumulatedPriorities,
     selectedCategories: user.selectedCategories,
   });
 
   const updated = await db.weeklyPlan.update({
     where: { id },
-    data: { draftJson: draft, regenerateCount: { increment: 1 } },
+    data: {
+      draftJson: draft,
+      priorities: accumulatedPriorities,
+      regenerateCount: { increment: 1 },
+    },
   });
 
   return NextResponse.json(updated);

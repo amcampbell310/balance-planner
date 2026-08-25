@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/backend/db";
+import { passwordError } from "@/backend/authValidation";
 
-const MIN_PASSWORD_LENGTH = 8;
 const BCRYPT_ROUNDS = 12;
 
 // Creates a credentials-based account only — this does not sign the user
@@ -11,19 +11,27 @@ const BCRYPT_ROUNDS = 12;
 // right after a successful signup here, same as any other login.
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { email, password } = body as { email?: string; password?: string };
+  const { name, email, password } = body as { name?: string; email?: string; password?: string };
 
-  if (!email || !password) {
-    return NextResponse.json({ error: "email and password are required" }, { status: 400 });
+  // Required, not optional — OAuth accounts always get a real name from
+  // the provider profile, and the calendar/greeting is meant to feel
+  // personalized per person, not generic. See prisma/schema.prisma's
+  // User.name field: still nullable at the DB level (an existing account
+  // predating this requirement, or a future OAuth edge case, shouldn't
+  // become an unrepresentable state), enforced here and in
+  // PATCH /api/account instead.
+  if (!name?.trim() || !email || !password) {
+    return NextResponse.json(
+      { error: "name, email, and password are required" },
+      { status: 400 },
+    );
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
   }
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return NextResponse.json(
-      { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
-      { status: 400 },
-    );
+  const pwError = passwordError(password);
+  if (pwError) {
+    return NextResponse.json({ error: pwError }, { status: 400 });
   }
 
   const existing = await db.user.findUnique({ where: { email } });
@@ -41,6 +49,7 @@ export async function POST(request: NextRequest) {
 
   await db.user.create({
     data: {
+      name: name.trim(),
       email,
       password: hashed,
       // See prisma/schema.prisma's User.emailVerified comment — matches

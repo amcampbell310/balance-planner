@@ -317,6 +317,7 @@ h1 {
   font-size: 0.85rem;
   font-weight: 600;
   padding: 0.25rem;
+  text-decoration: none;
 }
 
 .login-link-button:hover:not(:disabled) {
@@ -441,6 +442,28 @@ button.secondary {
 }
 
 button.secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+/* An <a> never inherits the base button {} rule (that's element-scoped to
+   button), so this reproduces the relevant parts of button + button.secondary
+   together for the one link styled to look like a button (DataExportSection). */
+a.secondary {
+  display: inline-block;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  width: fit-content;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+}
+
+a.secondary:hover {
   background: var(--surface-hover);
 }
 
@@ -570,6 +593,29 @@ button.danger-text {
   border-color: var(--accent);
 }
 
+.template-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.template-chip {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.template-chip:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .calendar-info-popover .item-tags {
   flex-wrap: wrap;
 }
@@ -650,6 +696,7 @@ button.danger-text {
 }
 
 .checkbox-group label {
+  position: relative;
   flex-direction: row;
   align-items: center;
   gap: 0.5rem;
@@ -659,11 +706,105 @@ button.danger-text {
   border-radius: 999px;
   padding: 0.45rem 0.9rem 0.45rem 0.7rem;
   cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
+/* The checkbox itself is never shown — the whole pill is the click target,
+   and its own background/border communicate checked state instead. Kept in
+   the DOM (not display: none) so it's still a real, focusable, screen-reader
+   checkbox — just visually hidden. */
 .checkbox-group input {
-  width: auto;
-  accent-color: var(--accent);
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.checkbox-group label:has(input:checked) {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* This list's <li> stays a plain container (see .item-list.recurring-item-list
+   li below, which strips the usual card treatment back off) — the card look
+   lives on .recurring-item-select instead, so the dismiss button sits
+   outside the colored card in the row's own gap, not inset inside the
+   card's padding. */
+.recurring-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recurring-item-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--item-color, var(--accent)) 12%, var(--surface));
+  border: 1px solid var(--border);
+  border-left: 7px solid var(--item-color, var(--accent));
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  box-shadow: var(--shadow);
+  opacity: 0.6;
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+
+.recurring-item-select:has(input:checked) {
+  opacity: 1;
+  background: color-mix(in srgb, var(--item-color, var(--accent)) 20%, var(--surface));
+}
+
+.item-list.recurring-item-list li {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  display: block;
+}
+
+/* Same "hidden but still a real checkbox" approach as .checkbox-group
+   above — the label is the click target, :has(input:checked) drives the
+   visible state. */
+.recurring-item-select input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.recurring-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+/* Borderless icon button, same treatment as .icon-button (the sidebar/modal
+   pattern) rather than its own bordered box — a boxed control read as a
+   separate element bolted onto the card instead of part of it. */
+.recurring-item-dismiss {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.recurring-item-dismiss:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--warning) 18%, transparent);
+  color: var(--warning);
 }
 
 .view-toggle {
@@ -1211,6 +1352,135 @@ span.week-nav-arrow {
   font-size: 0.9rem;
 }
 
+.excluded-requests {
+  gap: 0.5rem;
+}
+
+.excluded-request {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--border));
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+}
+
+.excluded-request span {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.excluded-request button {
+  flex-shrink: 0;
+  background: var(--warning);
+  color: var(--bg);
+  font-size: 0.85rem;
+}
+
+/* A visually quieter, bordered card — set apart from the primary Approve
+   button above it so "request changes" reads as the secondary/optional
+   path, not a second co-equal action stacked the same way. */
+.draft-adjust {
+  gap: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.draft-adjust p {
+  font-size: 0.85rem;
+}
+
+.draft-banner-row {
+  display: flex;
+  justify-content: center;
+}
+
+/* Sized to its own content, not stretched full-width — the calendar
+   underneath already shows the draft items visually, so this only needs
+   to be a compact way back into the review modal. */
+.draft-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+}
+
+.draft-banner:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.draft-banner-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--warning);
+  color: var(--bg);
+  font-size: 0.7rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, black 55%, transparent);
+  padding: 1.5rem;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.75rem;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.modal-close {
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: -0.25rem -0.25rem 0 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .modal-panel {
+    animation: rise-in 200ms ease both;
+  }
+}
+
 .muted {
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -1277,5 +1547,50 @@ span.week-nav-arrow {
   }
   100% {
     transform: scale(1);
+  }
+}
+
+.data-summary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.data-summary-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.data-summary-week h2 {
+  font-size: 1.1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* The whole point of this page — "save as PDF" via the browser's own print
+   dialog should produce a clean document, not a printout of app chrome. */
+@media print {
+  .sidebar,
+  .sidebar-overlay,
+  .hamburger,
+  .data-summary-actions {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .item-list li {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+
+  .data-summary-week {
+    break-inside: avoid-page;
   }
 }

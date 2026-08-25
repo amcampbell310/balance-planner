@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 
 // The one client component in the login flow — everything else
@@ -12,6 +13,7 @@ import { signIn } from "next-auth/react";
 export function CredentialsForm() {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,14 +27,20 @@ export function CredentialsForm() {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ name, email, password }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Something went wrong");
       }
 
+      // Auth.js's client signIn() returns `ok: true`/status 200 even on a
+      // failed credentials login — the server responds 200 with a redirect
+      // URL carrying an `error` query param rather than a 4xx. `error` is
+      // the field that actually reflects success/failure here; checking
+      // `ok` instead let a wrong password silently "succeed" client-side
+      // and leave the button spinning forever with nothing to catch.
       const result = await signIn("credentials", { email, password, redirect: false });
-      if (!result?.ok) {
+      if (result?.error) {
         throw new Error(
           mode === "signup"
             ? "Account created, but sign-in failed — try logging in below."
@@ -53,6 +61,14 @@ export function CredentialsForm() {
 
   return (
     <div className="stack credentials-form">
+      {mode === "signup" && (
+        <input
+          type="text"
+          placeholder="First name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      )}
       <input
         type="email"
         placeholder="Email"
@@ -66,9 +82,20 @@ export function CredentialsForm() {
         onChange={(e) => setPassword(e.target.value)}
       />
       {error && <p className="error-text">{error}</p>}
-      <button type="button" onClick={submit} disabled={loading || !email || !password}>
+      <button
+        type="button"
+        onClick={submit}
+        disabled={
+          loading || !email || !password || (mode === "signup" && !name.trim())
+        }
+      >
         {loading ? "Working..." : mode === "signup" ? "Create account" : "Sign in"}
       </button>
+      {mode === "login" && (
+        <Link href="/forgot-password" className="login-link-button">
+          Forgot password?
+        </Link>
+      )}
       <button
         type="button"
         className="login-link-button"

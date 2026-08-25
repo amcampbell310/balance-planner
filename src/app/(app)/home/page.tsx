@@ -42,11 +42,18 @@ export default async function HomePage({
   const nextHref = isCurrentWeek ? null : `/home?week=${weekOfToParam(addWeeks(weekOf, 1))}`;
 
   if (isCurrentWeek) {
-    const recommendations = await db.recommendation.findMany({
-      where: { userId: user.id, status: "ACTIVE" },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-    });
+    const [recommendations, previousWeek] = await Promise.all([
+      db.recommendation.findMany({
+        where: { userId: user.id, status: "ACTIVE" },
+        orderBy: { createdAt: "desc" },
+        take: 3,
+      }),
+      // Only meaningful before a plan exists (the "same as last week?"
+      // prompt only makes sense at the very start of a new week) — fetched
+      // unconditionally anyway since it's one cheap indexed query either
+      // way, avoiding a second conditional data-fetch shape here.
+      getWeekData(user, addWeeks(weekOf, -1)),
+    ]);
 
     return (
       <PageShell
@@ -57,9 +64,11 @@ export default async function HomePage({
         <WeeklyPlanner
           initialPlan={weeklyPlan}
           initialItems={items}
+          previousWeekItems={previousWeek.items}
           weekOf={weekOf}
           weekStartDay={user.weekStartDay}
           timezone={user.timezone}
+          selectedCategories={user.selectedCategories}
           recommendations={recommendations}
           prevHref={prevHref}
           nextHref={nextHref}

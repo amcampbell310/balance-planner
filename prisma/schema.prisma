@@ -2,9 +2,11 @@
 // Maps to the DB fields referenced across diagrams/*.mmd:
 // users, accounts, preferences, plan items, drafts, feedback, recommendations, history
 //
-// Auth: Auth.js with JWT sessions (see diagrams/architecture.mmd) — no Session or
-// VerificationToken model needed. Login is OAuth-only (Google, Microsoft, Apple),
-// so there's no email/magic-link verification flow either.
+// Auth: Auth.js with JWT sessions (see diagrams/architecture.mmd) — no Session
+// model needed. Login is OAuth (Google, Microsoft, Apple) or credentials
+// (email/password); PasswordResetToken below is a custom model for the
+// credentials forgot-password flow, not Auth.js's own VerificationToken
+// (which this app still has no use for — no magic-link/email sign-in).
 
 generator client {
   provider = "prisma-client-js"
@@ -124,15 +126,32 @@ model User {
   // survives for a grace period before a scheduled purge job hard-deletes it.
   deletedAt DateTime?
 
-  accounts        Account[]
-  weeklyPlans     WeeklyPlan[]
-  planItems       PlanItem[]
-  checkIns        CheckIn[]
-  recommendations Recommendation[]
-  notifications   Notification[]
+  accounts            Account[]
+  weeklyPlans         WeeklyPlan[]
+  planItems           PlanItem[]
+  checkIns            CheckIn[]
+  recommendations     Recommendation[]
+  notifications       Notification[]
+  passwordResetTokens PasswordResetToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Forgot-password flow (src/app/api/auth/forgot-password, .../reset-password)
+// — only ever created for accounts with a password set (credentials
+// accounts); an OAuth-only account gets a "sign in with Google instead"
+// email rather than a token. tokenHash, never the raw token, mirrors
+// User.password: the raw token exists only in the emailed link, never at
+// rest. Requesting a new one invalidates any previous token for that user
+// (see the forgot-password route) so at most one is ever valid at a time.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 // One per user per week — enforced below, not just documented.

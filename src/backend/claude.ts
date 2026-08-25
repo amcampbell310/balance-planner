@@ -35,7 +35,19 @@ const WeeklyDraftSchema = z.object({
   ),
   summary: z
     .string()
-    .describe("One or two sentences on how the week was balanced across categories"),
+    .describe(
+      "One or two sentences on how the week was balanced across categories — not the place to explain excluded requests, that's excludedRequests below",
+    ),
+  excludedRequests: z
+    .array(
+      z.object({
+        description: z.string().describe("What the user explicitly asked for, in their words"),
+        category: z.enum(CATEGORIES).describe("The category it would need, which isn't selected"),
+      }),
+    )
+    .describe(
+      "Anything priorities explicitly and specifically named (e.g. \"date night\") that would need a category outside the user's selected set. Only genuinely explicit, specific requests belong here — never vague or inferred wants.",
+    ),
 });
 
 export type WeeklyDraft = z.infer<typeof WeeklyDraftSchema>;
@@ -62,9 +74,11 @@ export async function generateWeeklyDraft(input: {
 
 Propose new items that fit around the existing fixed commitments already on the calendar. Never schedule a new item that overlaps an existing one. Keep the week realistic — don't overload any single day, and leave reasonable gaps between items.
 
-Hard constraint, not a preference: every item's category MUST be one of the user's selected categories, exactly as given. Never propose a category outside that set, even if it seems like an obviously good idea.
+Hard constraint, not a preference: every item's category MUST be one of the user's selected categories, exactly as given. Never propose a category outside that set, even if it seems like an obviously good idea. If priorities explicitly and specifically names something that would need a category outside the selected set (e.g. "date night" when Social isn't selected), do not schedule it and do not just mention it in the summary — record it in excludedRequests instead, with the request described in the user's own words and which category it needed.
 
-If priorities is empty or vague, propose a light, modest week — a handful of items covering the most clearly underused categories, not a maximal fully-packed schedule. Guessing at a few well-chosen items beats inventing many. Every new item needs a specific day and time, not a vague placement.`,
+If priorities is empty or vague, propose a light, modest week — a handful of items covering the most clearly underused categories, not a maximal fully-packed schedule. Guessing at a few well-chosen items beats inventing many. Every new item needs a specific day and time, not a vague placement.
+
+If priorities contains genuinely contradictory instructions (e.g. asking to keep the week light while also asking to pack it full), don't silently pick one — resolve toward the lighter, more conservative interpretation (easier for the user to add to later than to undo an overloaded week), but say so explicitly in the summary, e.g. "You asked to keep it light but also pack the week — I erred toward keeping it light." Never resolve a contradiction silently.`,
     messages: [
       {
         role: "user",
