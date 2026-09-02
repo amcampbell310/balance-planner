@@ -58,6 +58,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   pages: { signIn: "/" },
   callbacks: {
+    // Soft delete is meant to be recoverable for 30 days (see
+    // purgeDeletedAccounts.ts's grace period) — without this, there was no
+    // actual way back in: the account/user rows still exist, so OAuth just
+    // re-links to the same soft-deleted user and credentials still verifies
+    // the password fine, but the session callback below correctly refuses
+    // to attach a session to a deleted account either way. The net effect
+    // was a silent, permanent lockout with no error shown, not a real
+    // "deleted for 30 days" grace period. Reactivating here — right after
+    // proving account ownership via a real sign-in, before a session is
+    // ever issued — is the actual recovery path that comment promised.
+    async signIn({ user }) {
+      if (user.id) {
+        const dbUser = await db.user.findUnique({
+          where: { id: user.id },
+          select: { deletedAt: true },
+        });
+        if (dbUser?.deletedAt) {
+          await db.user.update({ where: { id: user.id }, data: { deletedAt: null } });
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
