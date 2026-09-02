@@ -3,11 +3,11 @@ import type { ReactNode } from "react";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Shared sending domain until a real one is verified — see .env.example.
-// Under an unverified Resend account this can only deliver to the account
-// owner's own verified email, which is fine: every recipient here is the
-// PlanItem/CheckIn owner, i.e. the same person running this instance.
-const FROM = "Balance Planner <onboarding@resend.dev>";
+// balanceplanner.org verified with Resend (2026-09-02, DKIM/SPF/DMARC all
+// green) — replaces the resend.dev sandbox address, which could only
+// deliver to the Resend account owner's own email. Real recipients (other
+// people's accounts, not just the app owner) work now.
+const FROM = "Balance Planner <notifications@balanceplanner.org>";
 
 // `text` is a plain-text fallback alongside the real React Email template —
 // Resend renders `react` to HTML server-side, and having both (rather than

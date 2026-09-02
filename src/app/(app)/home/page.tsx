@@ -1,6 +1,7 @@
+import { redirect } from "next/navigation";
 import { db } from "@/backend/db";
 import { requireOnboardedUser } from "@/backend/gate";
-import { getWeekData } from "@/backend/weekPlan";
+import { getWeekData, getEarliestNavigableWeekOf } from "@/backend/weekPlan";
 import { addWeeks, getCurrentWeekOf, snapParamToWeekOf, weekOfToParam } from "@/backend/week";
 import { PageShell } from "@/frontend/components/PageShell";
 import { WeeklyPlanner } from "@/frontend/components/WeeklyPlanner";
@@ -35,10 +36,24 @@ export default async function HomePage({
     }
   }
 
+  // A brand-new user (or one with a gap before their earliest real data)
+  // shouldn't be able to arrow back through years of empty pre-account
+  // weeks — bound navigation at account creation (or real data, if that
+  // somehow predates it). A direct/hand-edited ?week= param past that bound
+  // gets clamped here rather than just hiding the arrow, so the bound can't
+  // be bypassed by URL.
+  const earliestWeekOf = await getEarliestNavigableWeekOf(user);
+  if (weekOf.getTime() < earliestWeekOf.getTime()) {
+    redirect(`/home?week=${weekOfToParam(earliestWeekOf)}`);
+  }
+
   const isCurrentWeek = weekOf.getTime() === currentWeekOf.getTime();
   const { weeklyPlan, items } = await getWeekData(user, weekOf);
 
-  const prevHref = `/home?week=${weekOfToParam(addWeeks(weekOf, -1))}`;
+  const prevHref =
+    weekOf.getTime() > earliestWeekOf.getTime()
+      ? `/home?week=${weekOfToParam(addWeeks(weekOf, -1))}`
+      : null;
   const nextHref = isCurrentWeek ? null : `/home?week=${weekOfToParam(addWeeks(weekOf, 1))}`;
 
   if (isCurrentWeek) {

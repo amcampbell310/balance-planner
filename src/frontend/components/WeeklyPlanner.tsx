@@ -79,7 +79,7 @@ export function WeeklyPlanner({
   timezone: string;
   selectedCategories: string[];
   recommendations: RecommendationLike[];
-  prevHref: string;
+  prevHref: string | null;
   nextHref: string | null;
 }) {
   // Two independent state slots, deliberately not nested — a plan mutation

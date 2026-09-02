@@ -27,6 +27,9 @@ export function formatWeekRange(weekOf: Date): string {
 // branch reads a static checkIn row — each caller knows its own rule.
 // nextHref is null when weekOf is already the current week — no future
 // weeks exist in this app's model, you can only ever plan the current one.
+// prevHref is null when weekOf is already the earliest week the account can
+// navigate to (see getEarliestNavigableWeekOf) — a brand-new user shouldn't
+// be able to arrow back through empty pre-account history.
 export function WeekPicker({
   weekOf,
   prevHref,
@@ -34,16 +37,22 @@ export function WeekPicker({
   status,
 }: {
   weekOf: Date;
-  prevHref: string;
+  prevHref: string | null;
   nextHref: string | null;
   status?: string;
 }) {
   return (
     <div className="week-picker">
       <div className="week-picker-row">
-        <Link href={prevHref} className="week-nav-arrow" aria-label="Previous week">
-          ←
-        </Link>
+        {prevHref ? (
+          <Link href={prevHref} className="week-nav-arrow" aria-label="Previous week">
+            ←
+          </Link>
+        ) : (
+          <span className="week-nav-arrow" aria-hidden="true">
+            ←
+          </span>
+        )}
         <span className="week-nav-label">{formatWeekRange(weekOf)}</span>
         {nextHref ? (
           <Link href={nextHref} className="week-nav-arrow" aria-label="Next week">
